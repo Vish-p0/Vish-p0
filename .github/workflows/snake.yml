@@ -1,14 +1,13 @@
-name: GitHub Snake Animation
+name: Generate & Commit GitHub Snake to main
 
 on:
-  schedule:
-    - cron: "0 0 * * *"     # daily at midnight UTC (adjust if you want)
-  workflow_dispatch:        # allow manual run
+  workflow_dispatch:    # manual run from Actions tab
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 0 * * *" # daily at midnight UTC (optional)
 
-# allow action to create / update branches and publish
 permissions:
   contents: write
 
@@ -21,24 +20,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Generate GitHub contributions snake animations
+      - name: Generate snake files
         uses: Platane/snk@v3
         with:
-          # username to generate the animation for; repo owner works for profile repos
           github_user_name: ${{ github.repository_owner }}
-          # outputs to generate: svg for light/dark and an optional gif
           outputs: |
-            dist/github-snake.svg
-            dist/github-snake-dark.svg?palette=github-dark
-            dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9
+            output/github-snake.svg
+            output/github-snake-dark.svg?palette=github-dark
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy generated files to 'output' branch
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: output
-          commit_message: "chore: update snake animation [skip ci]"
+      - name: Commit and push generated files back to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output || true
+          git commit -m "chore: update github-snake [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:main
